@@ -6,6 +6,8 @@ import dotenv from "dotenv";
 dotenv.config(); // Carica le variabili dal file .env
 
 const app = express();
+
+// Usa la variabile di ambiente PORT, se presente, altrimenti usa 3000 come fallback
 const port = process.env.PORT || 3000;
 
 // Middleware
@@ -42,6 +44,8 @@ app.get("/api/products", async (req, res) => {
 });
 
 // Avvio del server
+// Render richiede che l'app ascolti su '0.0.0.0', non 'localhost'
+// Ascolta sulla porta dinamica passata tramite Render
 app.listen(port, "0.0.0.0", () => {
   console.log(`🚀 Server is running on port ${port}`);
 });
