@@ -1,14 +1,36 @@
-import { useState } from "react";
-import recipeData from "../data/recipes";
+import { useState, useEffect } from "react";
 
 export default function Home() {
+  const [recipes, setRecipes] = useState([]); // Stato per le ricette
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("Tutte");
+  const [loading, setLoading] = useState(false);  // Stato per il loading
+  const [error, setError] = useState(null);       // Stato per gli errori
 
-  const categories = ["Tutte", ...new Set(recipeData.map(r => r.category))];
+  const categories = ["Tutte", ...new Set(recipes.map(r => r.category))];
 
-  const filteredRecipes = recipeData.filter(recipe => {
+  // Funzione per chiamare l'API e ottenere le ricette
+  const fetchRecipes = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("https://super-mairket.onrender.com"); // Inserisci l'URL della tua API
+      if (!response.ok) throw new Error("Errore durante il recupero delle ricette");
+      const data = await response.json();
+      setRecipes(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecipes();  // Carica le ricette quando il componente viene montato
+  }, []);
+
+  const filteredRecipes = recipes.filter(recipe => {
     const matchesSearch = recipe.name.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === "Tutte" || recipe.category === filter;
     return matchesSearch && matchesFilter;
@@ -42,27 +64,33 @@ export default function Home() {
       <div className={`grid transition-all duration-700 ease-in-out ${selected ? "grid-cols-1 md:grid-cols-2 gap-6" : "grid-cols-1"}`}>
         {/* 🎴 Lista Ricette */}
         <div className={`grid sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-6 transition-all duration-700 ${selected ? "col-span-1" : "col-span-2"}`}>
-          {filteredRecipes.map((recipe, idx) => (
-            <div
-              key={idx}
-              onClick={() => setSelected(recipe)}
-              className={`cursor-pointer rounded-3xl overflow-hidden transition-transform hover:-translate-y-1
-                ${selected?.name === recipe.name
+          {loading ? (
+            <p className="text-center text-gray-500">Caricamento in corso...</p>
+          ) : error ? (
+            <p className="text-center text-red-500">{error}</p>
+          ) : (
+            filteredRecipes.map((recipe, idx) => (
+              <div
+                key={idx}
+                onClick={() => setSelected(recipe)}
+                className={`cursor-pointer rounded-3xl overflow-hidden transition-transform hover:-translate-y-1
+                  ${selected?.name === recipe.name
                   ? "ring-4 ring-green-400 shadow-2xl"
                   : "shadow-lg hover:shadow-2xl"}
-                bg-gradient-to-br from-white to-gray-100`}
-            >
-              <img
-                src={recipe.image}
-                alt={recipe.name}
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-4">
-                <h3 className="text-xl font-semibold text-gray-800">{recipe.name}</h3>
-                <p className="text-sm text-gray-500">{recipe.category}</p>
+                  bg-gradient-to-br from-white to-gray-100`}
+              >
+                <img
+                  src={recipe.image}
+                  alt={recipe.name}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-4">
+                  <h3 className="text-xl font-semibold text-gray-800">{recipe.name}</h3>
+                  <p className="text-sm text-gray-500">{recipe.category}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* ✅ Dettagli Ricetta Selezionata */}
