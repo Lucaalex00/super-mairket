@@ -49,6 +49,6 @@ app.get("/api/products", async (req, res) => {
 // Avvio del server
 // Render richiede che l'app ascolti su '0.0.0.0', non 'localhost'
 // Ascolta sulla porta dinamica passata tramite Render
-app.listen(port, "0.0.0.0", () => {
+app.listen(port, () => {
   console.log(`🚀 Server is running on port ${port}`);
 });
