@@ -16,7 +16,7 @@ export default function Scanner() {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <video ref={videoRef} className="rounded-xl shadow" autoPlay muted />
+      <video ref={videoRef} className="rounded-xl shadow scale-x-[-1]" autoPlay muted />
     </div>
   );
 }
