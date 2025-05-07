@@ -1,16 +1,16 @@
-// Importazioni necessarie
+// server.js
 import express from "express";
-import axios from "axios";
+import cors from "cors";
 import dotenv from "dotenv";
+import { processImage } from "../src/services/ocrService"; // Importa il servizio OCR
 
-dotenv.config(); // Carica le variabili dal file .env
+dotenv.config();
 
 const app = express();
-
-// Middleware
+app.use(cors());
 app.use(express.json());
 
-// API per ricevere l'immagine dal frontend e fare OCR
+// API per ricevere l'immagine e fare OCR
 app.post("/api/ocr", async (req, res) => {
   const { base64Image } = req.body;
 
@@ -19,33 +19,12 @@ app.post("/api/ocr", async (req, res) => {
   }
 
   try {
-    // Fai la chiamata a Google Vision usando la chiave API
-    const response = await axios.post(
-      `https://vision.googleapis.com/v1/images:annotate?key=${process.env.OCR_API_KEY}`,
-      {
-        requests: [
-          {
-            image: {
-              content: base64Image,
-            },
-            features: [
-              { type: "TEXT_DETECTION" },
-              { type: "LABEL_DETECTION", maxResults: 5 },
-            ],
-          },
-        ],
-      }
-    );
-
-    const result = response.data;
-    const text =
-      result.responses?.[0]?.fullTextAnnotation?.text ||
-      "Nessun testo rilevato.";
-    const labelResults = result.responses?.[0]?.labelAnnotations || [];
-
-    res.json({ text, labelResults });
+    // Chiama il servizio OCR per eseguire l'elaborazione
+    const result = await processImage(base64Image);
+    res.json(result); // Restituisce il testo e le etichette tradotte
+    console.log(result);
   } catch (err) {
-    console.error("Errore durante la chiamata a Google Vision:", err);
+    console.error("Errore durante l'elaborazione dell'immagine:", err);
     res
       .status(500)
       .json({ error: "Errore durante l'elaborazione dell'immagine" });

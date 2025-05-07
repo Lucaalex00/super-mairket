@@ -11,6 +11,7 @@
     "start": "node api/server.js"
   },
   "dependencies": {
+    "@google-cloud/translate": "^9.0.1",
     "@google-cloud/vision": "^5.1.0",
     "@tailwindcss/vite": "^4.1.5",
     "axios": "^1.9.0",

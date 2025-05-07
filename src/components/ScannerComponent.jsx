@@ -8,7 +8,6 @@ export default function ScannerComponent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Funzione per avviare la fotocamera
   useEffect(() => {
     const getCameraStream = async () => {
       try {
@@ -32,7 +31,6 @@ export default function ScannerComponent() {
     };
   }, []);
 
-  // Funzione per acquisire l'immagine e inviarla al backend
   const captureAndSend = async () => {
     if (!canvasRef.current || !videoRef.current) return;
 
@@ -48,26 +46,37 @@ export default function ScannerComponent() {
     await sendToGoogleVision(base64Image);
   };
 
-  // Funzione per inviare l'immagine al backend per OCR
   const sendToGoogleVision = async (base64Image) => {
     setLoading(true);
     setOcrResult("");
     setLabels([]);
-
     try {
-      const response = await fetch("http://localhost:3000/api/ocr", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          base64Image,
-        }),
-      });
+      const response = await fetch(
+        "https://vision.googleapis.com/v1/images:annotate?key=AIzaSyBV_UkWWl6AqclOutOedMgJsjLa_bbRs2g",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            requests: [
+              {
+                image: {
+                  content: base64Image,
+                },
+                features: [
+                  { type: "TEXT_DETECTION" },
+                  { type: "LABEL_DETECTION", maxResults: 5 },
+                ],
+              },
+            ],
+          }),
+        }
+      );
 
       const result = await response.json();
-      const text = result.text || "Nessun testo rilevato.";
-      const labelResults = result.labelResults || [];
+      const text = result.responses?.[0]?.fullTextAnnotation?.text || "Nessun testo rilevato.";
+      const labelResults = result.responses?.[0]?.labelAnnotations || [];
 
       setOcrResult(text);
       setLabels(labelResults.map((l) => l.description));
