@@ -2,7 +2,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { processImage } from "./ocrService"; // Importa il servizio OCR
+import { processImage } from "./ocrService.js"; // Importa il servizio OCR
 
 dotenv.config();
 

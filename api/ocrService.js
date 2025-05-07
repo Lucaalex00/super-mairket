@@ -1,11 +1,12 @@
 // src/services/ocrService.js
 import axios from "axios";
-import { Translate } from "@google-cloud/translate";
+import { TranslationServiceClient } from "@google-cloud/translate"; // Importa il client corretto
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const translate = new Translate();
+// Crea un'istanza del client di traduzione
+const translate = new TranslationServiceClient(); // Usa il client in modo appropriato
 
 export const processImage = async (base64Image) => {
   console.log("Inizio elaborazione immagine...");
@@ -59,8 +60,13 @@ const translateLabels = async (labels) => {
   try {
     const translations = await Promise.all(
       labels.map(async (label) => {
-        const [translation] = await translate.translate(label, "it");
-        return translation;
+        // Usa il client corretto per la traduzione
+        const [translation] = await translate.translateText({
+          contents: [label],
+          targetLanguageCode: "it",
+          parent: `projects/${process.env.GOOGLE_CLOUD_PROJECT}/locations/global`, // Aggiungi il progetto e la location
+        });
+        return translation.translatedText;
       })
     );
     console.log("Traduzioni completate:", translations);
