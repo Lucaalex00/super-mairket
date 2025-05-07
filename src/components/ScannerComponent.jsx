@@ -1,36 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, useRef } from "react";
 
 export default function ScannerComponent() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [ocrResult, setOcrResult] = useState("");
-  const [labels, setLabels] = useState([]);
+  const [geminiDescription, setGeminiDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [geminiResponse, setGeminiResponse] = useState(null);
-
-  useEffect(() => {
-    const getCameraStream = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-        });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (err) {
-        setError("Accesso alla fotocamera negato o non disponibile.");
-        console.error(err);
-      }
-    };
-    getCameraStream();
-
-    return () => {
-      if (videoRef.current?.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
 
   const captureAndSend = async () => {
     if (!canvasRef.current || !videoRef.current) return;
@@ -50,9 +26,11 @@ export default function ScannerComponent() {
   const sendToBackend = async (base64Image) => {
     setLoading(true);
     setOcrResult("");
-    setLabels([]);
+    setGeminiDescription("");
+    setError("");
+
     try {
-      const response = await fetch("https://your-render-backend-url/api/ocr", { // Sostituisci con il tuo endpoint su Render
+      const response = await fetch("https://super-mairket.onrender.com/api/ocr", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -61,86 +39,25 @@ export default function ScannerComponent() {
       });
 
       const result = await response.json();
-      setOcrResult(result.text);
-      setLabels(result.labelResults.map((l) => l.description));
-
-      // Passa il prompt a Gemini per ricevere informazioni sul prodotto
-      if (result.labelResults.length > 0) {
-        await fetchGeminiInfo(result.labelResults.map((l) => l.description).join(", "));
-      }
+      setOcrResult(result.ocrText);
+      setGeminiDescription(result.geminiDescription);
     } catch (err) {
-      console.error(err);
-      setOcrResult("Errore durante l'elaborazione dell'immagine.");
+      setError("Errore durante l'elaborazione dell'immagine.");
+      console.error("Errore:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Funzione per inviare il prompt a Gemini (o GPT-4)
-  const fetchGeminiInfo = async (labels) => {
-    try {
-      const prompt = `Puoi fornire una descrizione e le caratteristiche dei seguenti oggetti? ${labels}`;
-
-      const response = await fetch("/api/gemini", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt }),
-      });
-
-      const geminiData = await response.json();
-      setGeminiResponse(geminiData?.description || "Non ci sono informazioni disponibili.");
-    } catch (error) {
-      console.error(error);
-      setGeminiResponse("Errore nella richiesta a Gemini.");
-    }
-  };
-
   return (
-    <div className="max-w-xl mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">Scanner Fotocamera</h2>
-
-      {error && <p className="text-red-500">{error}</p>}
-
-      <div className="relative w-full aspect-video bg-black rounded overflow-hidden mb-4">
-        <video ref={videoRef} autoPlay playsInline className="w-full scale-x-[-1] h-full object-cover" />
-      </div>
-
-      <button
-        onClick={captureAndSend}
-        className="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700 transition mb-4"
-      >
-        Scatta e Analizza
-      </button>
-
-      {loading && <p className="text-blue-500">Analisi in corso...</p>}
-
-      {ocrResult && (
-        <div className="bg-gray-100 p-4 rounded shadow whitespace-pre-wrap mb-4">
-          <h3 className="font-semibold mb-2">Testo Rilevato:</h3>
-          {ocrResult}
-        </div>
-      )}
-
-      {labels.length > 0 && (
-        <div className="bg-gray-100 p-4 rounded shadow">
-          <h3 className="font-semibold mb-2">Oggetto Rilevato:</h3>
-          <ul className="list-disc pl-6">
-            {labels.map((label, idx) => (
-              <li key={idx}>{label}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {geminiResponse && (
-        <div className="bg-gray-100 p-4 rounded shadow mt-4">
-          <h3 className="font-semibold mb-2">Descrizione Prodotto:</h3>
-          <p>{geminiResponse}</p>
-        </div>
-      )}
-
+    <div>
+      <h2>Scanner e Analizzatore</h2>
+      <video ref={videoRef} autoPlay playsInline />
+      <button onClick={captureAndSend}>Scatta e Analizza</button>
+      {loading && <p>Elaborazione in corso...</p>}
+      {error && <p>{error}</p>}
+      {ocrResult && <div><h3>Testo OCR:</h3><p>{ocrResult}</p></div>}
+      {geminiDescription && <div><h3>Descrizione Gemini:</h3><p>{geminiDescription}</p></div>}
       <canvas ref={canvasRef} style={{ display: "none" }} />
     </div>
   );

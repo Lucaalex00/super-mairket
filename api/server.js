@@ -1,40 +1,21 @@
 import express from "express";
-import mongoose from "mongoose";
+import axios from "axios";
 import cors from "cors";
 import dotenv from "dotenv";
-import axios from "axios";
 
-// Carica le variabili dal file .env
-dotenv.config();
+dotenv.config(); // Carica variabili dal file .env
 
 const app = express();
-
-// Usa la variabile di ambiente PORT, se presente, altrimenti usa 3000 come fallback
 const port = process.env.PORT || 3000;
 
-// Middleware
+// Middleware per parsare il body delle richieste
 app.use(express.json());
 app.use(cors());
 
-// Connessione a MongoDB
-mongoose
-  .connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.log("❌ MongoDB connection error:", err));
-
-// API per ricevere l'immagine dal frontend e fare OCR
-app.post("/api/ocr", async (req, res) => {
-  const { base64Image } = req.body;
-
-  if (!base64Image) {
-    return res.status(400).json({ error: "Immagine non fornita" });
-  }
-
+// Funzione per fare l'OCR
+const getOcrText = async (base64Image) => {
   try {
-    // Fai la chiamata a Google Vision usando la chiave API del backend
+    // Chiamata a Google Vision API per fare l'OCR
     const response = await axios.post(
       `https://vision.googleapis.com/v1/images:annotate?key=${process.env.OCR_API_KEY}`,
       {
@@ -43,31 +24,74 @@ app.post("/api/ocr", async (req, res) => {
             image: {
               content: base64Image,
             },
-            features: [
-              { type: "TEXT_DETECTION" },
-              { type: "LABEL_DETECTION", maxResults: 5 },
-            ],
+            features: [{ type: "TEXT_DETECTION" }],
           },
         ],
       }
     );
+    // Estrae il testo dall'API di Google Vision
+    const text = response.data.responses[0]?.fullTextAnnotation?.text || "";
+    return text;
+  } catch (error) {
+    console.error("Errore durante l'OCR:", error);
+    throw new Error("Errore durante l'elaborazione dell'immagine");
+  }
+};
 
-    const result = response.data;
-    const text =
-      result.responses?.[0]?.fullTextAnnotation?.text ||
-      "Nessun testo rilevato.";
-    const labelResults = result.responses?.[0]?.labelAnnotations || [];
+// Funzione per inviare la richiesta a Gemini
+const getGeminiDescription = async (text) => {
+  try {
+    // Chiamata a Gemini (o al servizio che usi)
+    const response = await axios.post("https://api.gemini.com/describe", {
+      text: text, // Utilizza il testo estratto dall'OCR
+    });
 
-    res.json({ text, labelResults });
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ error: "Errore durante l'elaborazione dell'immagine" });
+    return response.data.description; // Supponendo che Gemini restituisca una descrizione
+  } catch (error) {
+    console.error("Errore durante la chiamata a Gemini:", error);
+    throw new Error(
+      "Errore nel recupero delle informazioni dal servizio Gemini"
+    );
+  }
+};
+
+// Endpoint per ricevere l'immagine, fare l'OCR e ottenere la descrizione
+app.post("/api/ocr", async (req, res) => {
+  const { base64Image } = req.body;
+
+  if (!base64Image) {
+    return res.status(400).json({ error: "Immagine non fornita" });
+  }
+
+  try {
+    console.log("Inizio processo di OCR...");
+
+    // Step 1: Fai l'OCR sull'immagine
+    const ocrText = await getOcrText(base64Image);
+    if (!ocrText) {
+      return res
+        .status(400)
+        .json({ error: "Nessun testo rilevato nell'immagine" });
+    }
+
+    console.log("Testo estratto:", ocrText);
+
+    // Step 2: Invia il testo estratto a Gemini
+    const geminiDescription = await getGeminiDescription(ocrText);
+    console.log("Descrizione ottenuta da Gemini:", geminiDescription);
+
+    // Restituisci il testo dell'OCR e la descrizione di Gemini
+    res.json({
+      ocrText: ocrText,
+      geminiDescription: geminiDescription,
+    });
+  } catch (error) {
+    console.error("Errore durante il processo:", error);
+    res.status(500).json({ error: error.message || "Errore interno" });
   }
 });
 
 // Avvio del server
 app.listen(port, () => {
-  console.log(`🚀 Server is running on port ${port}`);
+  console.log(`🚀 Server in esecuzione sulla porta ${port}`);
 });
