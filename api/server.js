@@ -2,9 +2,10 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
-import process from "dotenv";
 import axios from "axios";
-dotenv.config(); // Carica le variabili dal file .env
+
+// Carica le variabili dal file .env
+dotenv.config();
 
 const app = express();
 
@@ -42,46 +43,6 @@ app.post("/api/ocr", async (req, res) => {
             image: {
               content: base64Image,
             },
-            features: [
-              { type: "TEXT_DETECTION" },
-              { type: "LABEL_DETECTION", maxResults: 5 },
-            ],
-          },
-        ],
-      }
-    );
-
-    const result = response.data;
-    const text =
-      result.responses?.[0]?.fullTextAnnotation?.text ||
-      "Nessun testo rilevato.";
-    const labelResults = result.responses?.[0]?.labelAnnotations || [];
-
-    res.json({ text, labelResults });
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ error: "Errore durante l'elaborazione dell'immagine" });
-  }
-});
-
-// Endpoint per fare OCR
-app.post("/api/ocr", async (req, res) => {
-  const { base64Image } = req.body;
-
-  if (!base64Image) {
-    return res.status(400).json({ error: "Immagine non fornita" });
-  }
-
-  try {
-    // Chiamata a Google Vision API
-    const response = await axios.post(
-      `https://vision.googleapis.com/v1/images:annotate?key=${process.env.OCR_API_KEY}`,
-      {
-        requests: [
-          {
-            image: { content: base64Image },
             features: [
               { type: "TEXT_DETECTION" },
               { type: "LABEL_DETECTION", maxResults: 5 },
