@@ -1,13 +1,38 @@
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function ScannerComponent() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [ocrResult, setOcrResult] = useState("");
-  const [geminiDescription, setGeminiDescription] = useState("");
+  const [labels, setLabels] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Funzione per avviare la fotocamera
+  useEffect(() => {
+    const getCameraStream = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        setError("Accesso alla fotocamera negato o non disponibile.");
+        console.error(err);
+      }
+    };
+    getCameraStream();
+
+    return () => {
+      if (videoRef.current?.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
+
+  // Funzione per acquisire l'immagine e inviarla al backend
   const captureAndSend = async () => {
     if (!canvasRef.current || !videoRef.current) return;
 
@@ -20,44 +45,77 @@ export default function ScannerComponent() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const base64Image = canvas.toDataURL("image/jpeg").split(",")[1];
-    await sendToBackend(base64Image);
+    await sendToGoogleVision(base64Image);
   };
 
-  const sendToBackend = async (base64Image) => {
+  // Funzione per inviare l'immagine al backend per OCR
+  const sendToGoogleVision = async (base64Image) => {
     setLoading(true);
     setOcrResult("");
-    setGeminiDescription("");
-    setError("");
+    setLabels([]);
 
     try {
-      const response = await fetch("https://super-mairket.onrender.com/api/ocr", {
+      const response = await fetch("http://localhost:3000/api/ocr", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ base64Image }),
+        body: JSON.stringify({
+          base64Image,
+        }),
       });
 
       const result = await response.json();
-      setOcrResult(result.ocrText);
-      setGeminiDescription(result.geminiDescription);
+      const text = result.text || "Nessun testo rilevato.";
+      const labelResults = result.labelResults || [];
+
+      setOcrResult(text);
+      setLabels(labelResults.map((l) => l.description));
     } catch (err) {
-      setError("Errore durante l'elaborazione dell'immagine.");
-      console.error("Errore:", err);
+      console.error(err);
+      setOcrResult("Errore durante l'elaborazione dell'immagine.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div>
-      <h2>Scanner e Analizzatore</h2>
-      <video ref={videoRef} autoPlay playsInline />
-      <button onClick={captureAndSend}>Scatta e Analizza</button>
-      {loading && <p>Elaborazione in corso...</p>}
-      {error && <p>{error}</p>}
-      {ocrResult && <div><h3>Testo OCR:</h3><p>{ocrResult}</p></div>}
-      {geminiDescription && <div><h3>Descrizione Gemini:</h3><p>{geminiDescription}</p></div>}
+    <div className="max-w-xl mx-auto p-4">
+      <h2 className="text-2xl font-bold mb-4">Scanner Fotocamera</h2>
+
+      {error && <p className="text-red-500">{error}</p>}
+
+      <div className="relative w-full aspect-video bg-black rounded overflow-hidden mb-4">
+        <video ref={videoRef} autoPlay playsInline className="w-full scale-x-[-1] h-full object-cover" />
+      </div>
+
+      <button
+        onClick={captureAndSend}
+        className="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700 transition mb-4"
+      >
+        Scatta e Analizza
+      </button>
+
+      {loading && <p className="text-blue-500">Analisi in corso...</p>}
+
+      {ocrResult && (
+        <div className="bg-gray-100 p-4 rounded shadow whitespace-pre-wrap mb-4">
+          <h3 className="font-semibold mb-2">Testo Rilevato:</h3>
+          {ocrResult}
+        </div>
+      )}
+
+      {labels.length > 0 && (
+        <div className="bg-gray-100 p-4 rounded shadow">
+          <h3 className="font-semibold mb-2">Oggetto Rilevato:</h3>
+          <ul className="list-disc pl-6">
+            {labels.map((label, idx) => (
+              <li key={idx}>{label}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <canvas ref={canvasRef} style={{ display: "none" }} />
     </div>
   );
