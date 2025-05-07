@@ -1,7 +1,8 @@
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
-import { dotenv, process } from "dotenv";
+import dotenv from "dotenv";
+import process from "dotenv";
 import axios from "axios";
 dotenv.config(); // Carica le variabili dal file .env
 
