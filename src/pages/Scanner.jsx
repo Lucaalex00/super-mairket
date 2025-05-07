@@ -1,3 +1,4 @@
+import ScannerComponent from "../components/ScannerComponent";
 export default function Scanner() {
   return (
     <div className="max-w-2xl mx-auto">
@@ -6,6 +7,7 @@ export default function Scanner() {
         <p className="text-gray-600">
           Qui potrai utilizzare la fotocamera per rilevare prodotti automaticamente tramite AI.
         </p>
+        <ScannerComponent/>
       </div>
     </div>
   );

@@ -1,128 +1,60 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import useProducts from "../hooks/useProducts";
+import useCategoryColors from "../hooks/useCategoryColors";
+import CarouselComponent from "../components/CarouselComponent";
+import OfferProducts from "../components/OfferProductsComponent";
+import SpinnerComponent from "../components/SpinnerComponent";
 
 export default function Home() {
-  const [recipes, setRecipes] = useState([]); // Stato per le ricette
-  const [selected, setSelected] = useState(null);
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("Tutte");
-  const [loading, setLoading] = useState(false);  // Stato per il loading
-  const [error, setError] = useState(null);       // Stato per gli errori
+  const { products, loading, error } = useProducts();
 
-  const categories = ["Tutte", ...new Set(recipes.map(r => r.category))];
+  const [categories, setCategories] = useState([]);
+  const { categoryColors } = useCategoryColors(categories);
 
-  // Funzione per chiamare l'API e ottenere le ricette
-  const fetchRecipes = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("https://super-mairket.onrender.com"); // Inserisci l'URL della tua API
-      if (!response.ok) throw new Error("Errore durante il recupero delle ricette");
-      const data = await response.json();
-      setRecipes(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Quando i prodotti sono caricati, estrai le categorie uniche
   useEffect(() => {
-    fetchRecipes();  // Carica le ricette quando il componente viene montato
-  }, []);
+    if (products && products.length > 0) {
+      const uniqueCategories = [...new Set(products.map(p => p.category))];
+      setCategories(uniqueCategories);
+    }
+  }, [products]);
 
-  const filteredRecipes = recipes.filter(recipe => {
-    const matchesSearch = recipe.name.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "Tutte" || recipe.category === filter;
-    return matchesSearch && matchesFilter;
-  });
+  if (loading) {
+    return <SpinnerComponent />;
+  }
+
+  if (error) {
+    return <p className="text-center text-red-500 text-lg">{error}</p>;
+  }
+
+  // Funzione per selezionare prodotti casuali
+  const getRandomProducts = (count) => [...products].sort(() => 0.5 - Math.random()).slice(0, count);
+  const randomProducts = getRandomProducts(8);
+  const offers = products.filter(p => p.price < 2).slice(0, 4);
 
   return (
     <div className="max-w-7xl mx-auto p-4">
-      <h1 className="text-4xl font-bold text-gray-800 mb-6 text-center">Ricettario</h1>
-
-      {/* 🔍 Ricerca + Filtro */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <input
-          type="text"
-          placeholder="Cerca una ricetta..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:w-1/2 px-4 py-2 border border-gray-300 rounded-xl shadow focus:outline-none focus:ring-2 focus:ring-blue-300"
-        />
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-xl shadow bg-white"
+      {/* Hero */}
+      <div className="text-center py-10">
+        <h1 className="text-5xl font-bold text-gray-800 mb-4">Benvenuto su Super-Mairket</h1>
+        <p className="text-gray-600 mb-6">Scopri offerte, prodotti e trova tutto ciò che ti serve!</p>
+        <Link
+          to="/catalog"
+          className="bg-green-600 text-white px-6 py-3 rounded-full shadow hover:bg-green-700 transition"
         >
-          {categories.map((cat, idx) => (
-            <option key={idx} value={cat}>{cat}</option>
-          ))}
-        </select>
+          Vai al Catalogo
+        </Link>
       </div>
 
-      {/* 🧾 Layout dinamico */}
-      <div className={`grid transition-all duration-700 ease-in-out ${selected ? "grid-cols-1 md:grid-cols-2 gap-6" : "grid-cols-1"}`}>
-        {/* 🎴 Lista Ricette */}
-        <div className={`grid sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-6 transition-all duration-700 ${selected ? "col-span-1" : "col-span-2"}`}>
-          {loading ? (
-            <p className="text-center text-gray-500">Caricamento in corso...</p>
-          ) : error ? (
-            <p className="text-center text-red-500">{error}</p>
-          ) : (
-            filteredRecipes.map((recipe, idx) => (
-              <div
-                key={idx}
-                onClick={() => setSelected(recipe)}
-                className={`cursor-pointer rounded-3xl overflow-hidden transition-transform hover:-translate-y-1
-                  ${selected?.name === recipe.name
-                  ? "ring-4 ring-green-400 shadow-2xl"
-                  : "shadow-lg hover:shadow-2xl"}
-                  bg-gradient-to-br from-white to-gray-100`}
-              >
-                <img
-                  src={recipe.image}
-                  alt={recipe.name}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4">
-                  <h3 className="text-xl font-semibold text-gray-800">{recipe.name}</h3>
-                  <p className="text-sm text-gray-500">{recipe.category}</p>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* ✅ Dettagli Ricetta Selezionata */}
-        {selected && (
-          <div className="bg-white p-6 rounded-3xl shadow-xl relative transition-all duration-700 ease-in-out">
-            {/* ❌ Bottone Chiudi */}
-            <button
-              onClick={() => setSelected(null)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-red-500 text-xl font-bold"
-              title="Chiudi"
-            >
-              &times;
-            </button>
-
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Ingredienti per {selected.name}
-            </h2>
-            <ul className="grid sm:grid-cols-2 gap-4">
-              {selected.ingredients.map((item, idx) => (
-                <li
-                  key={idx}
-                  className="bg-gradient-to-br from-blue-50 to-white p-5 rounded-xl shadow hover:shadow-md transition"
-                >
-                  <h4 className="text-lg font-bold text-gray-700">{item.name}</h4>
-                  <p className="text-sm text-gray-600">Corsia: <span className="font-semibold">{item.aisle}</span></p>
-                  <p className="text-sm text-gray-600">Prezzo: <span className="font-semibold">€{item.price.toFixed(2)}</span></p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+      {/* Carousel */}
+      <div className="mt-12">
+        <h2 className="text-3xl font-bold mb-6 text-center">Prodotti IN EVIDENZA</h2>
+        <CarouselComponent products={randomProducts} categoryColors={categoryColors} />
       </div>
+
+      {/* Offerte */}
+      <OfferProducts products={offers} categoryColors={categoryColors} />
     </div>
   );
 }
