@@ -1,5 +1,5 @@
-// src/hooks/useProducts.js
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 export default function useProducts() {
   const [products, setProducts] = useState([]);
@@ -7,29 +7,23 @@ export default function useProducts() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-
-    async function fetchData() {
+    const fetchProducts = async () => {
       try {
-        const res = await fetch(
-          "https://super-mairket.onrender.com/api/products",
-          {
-            signal: controller.signal,
-          }
-        );
-        if (!res.ok) throw new Error("Errore nel recupero dei prodotti");
-        const data = await res.json();
+        const { data } = await axios.get("/api/products");
+        console.log("✅ Risposta ricevuta:", status, data);
         setProducts(data);
       } catch (err) {
-        if (err.name !== "AbortError") setError(err.message);
+        console.error("❌ Errore Axios:", err.message);
+        if (err.response) {
+          console.error("📦 Risposta errore:", err.response.data);
+        }
+        setError(err.message || "Errore nel caricamento dei prodotti");
       } finally {
         setLoading(false);
       }
-    }
+    };
 
-    fetchData();
-
-    return () => controller.abort();
+    fetchProducts();
   }, []);
 
   return { products, loading, error };

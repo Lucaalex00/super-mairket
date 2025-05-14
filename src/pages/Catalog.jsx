@@ -1,3 +1,4 @@
+// Catalog.js
 import React, { useMemo, useState } from 'react';
 import useProducts from '../hooks/useProducts';
 import useCategoryColors from '../hooks/useCategoryColors';

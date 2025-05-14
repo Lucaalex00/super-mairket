@@ -8,19 +8,24 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node api/server.js"
+    "start": "node server/server.js"
   },
   "dependencies": {
     "@google-cloud/translate": "^9.0.1",
     "@google-cloud/vision": "^5.1.0",
     "@google/generative-ai": "^0.24.1",
+    "@reduxjs/toolkit": "^2.8.2",
     "@tailwindcss/vite": "^4.1.5",
     "axios": "^1.9.0",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.14.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-redux": "^9.2.0",
     "react-router-dom": "^7.5.3",
     "swiper": "^11.2.6",
     "tailwindcss": "^4.1.5"
