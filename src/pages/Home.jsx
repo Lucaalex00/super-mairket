@@ -39,7 +39,7 @@ export default function Home() {
     <div className="max-w-7xl mx-auto p-4">
       {/* Hero */}
       <div className="text-center py-10">
-        <h1 className="text-5xl font-bold text-gray-800 mb-4">Benvenuto su Super-Mairket</h1>
+        <h1 className="text-5xl font-extrabold text-gray-800 mb-4">Benvenuto su Super-Mairket</h1>
         <p className="text-gray-600 mb-6">Scopri offerte, prodotti e trova tutto ciò che ti serve!</p>
         <Link
           to="/catalog"

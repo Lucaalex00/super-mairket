@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { logout } from '../store/slices/authSlice';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // Importa Axios
+import axios from 'axios';
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -16,18 +16,13 @@ const Profile = () => {
     const fetchUserData = async () => {
       try {
         const res = await axios.get('/api/auth', {
-          headers: {
-            Authorization: `Bearer ${token}`, // Invia il token come header
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
-
-        setUserData(res.data); // Salva i dati dell'utente ricevuti dalla risposta
+        setUserData(res.data);
       } catch (err) {
         console.error('Errore caricamento profilo:', err);
-        console.log("🔑 Token ricevuto:", token);
       }
     };
-
     if (token) fetchUserData();
   }, [token]);
 
@@ -37,49 +32,52 @@ const Profile = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg">
-      <div className="flex items-center justify-between">
+    <div className="max-w-4xl mx-auto mt-10 p-8 bg-white rounded-xl shadow-lg">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
         <div>
           <h2 className="text-3xl font-bold text-gray-800">Benvenuto,</h2>
-          <p className="text-lg text-blue-600">{userData.email}</p>
+          <p className="text-lg text-blue-600 truncate max-w-xs">{userData.email}</p>
         </div>
         <button
           onClick={handleLogout}
-          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+          className="bg-red-500 text-white px-5 py-2 rounded-lg shadow hover:bg-red-600 transition"
         >
           Logout
         </button>
       </div>
 
-      <div className="mt-8">
-        <h3 className="text-xl font-semibold text-gray-700 mb-4">Panoramica Account</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-4 border rounded bg-gray-50">
-            <p className="text-sm text-gray-500">Email</p>
-            <p className="text-md text-gray-800">{userData.email}</p>
-          </div>
-          <div className="p-4 border rounded bg-gray-50">
-            <p className="text-sm text-gray-500">ID Utente</p>
-            <p className="text-md text-gray-800">{userData._id}</p>
-          </div>
+      <section className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="p-6 border rounded-lg bg-gray-50 shadow-sm">
+          <p className="text-sm text-gray-500">Email</p>
+          <p className="text-md font-semibold text-gray-900">{userData.email || '-'}</p>
         </div>
-      </div>
+        <div className="p-6 border rounded-lg bg-gray-50 shadow-sm">
+          <p className="text-sm text-gray-500">ID Utente</p>
+          <p className="text-md font-semibold text-gray-900">{userData._id || '-'}</p>
+        </div>
+      </section>
 
-      <div className="mt-8 relative">
+      <div className="relative mt-10">
         <button
           onClick={() => setShowMenu((prev) => !prev)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="bg-blue-600 text-white px-5 py-2 rounded-lg shadow hover:bg-blue-700 transition flex items-center gap-2"
         >
-          I miei acquisti OCR ▼
+          I miei acquisti OCR <span className="text-xl">▼</span>
         </button>
 
         {showMenu && (
-          <div className="absolute mt-2 w-full bg-white border rounded shadow-lg z-10">
+          <div className="absolute mt-2 w-full bg-white border rounded-lg shadow-lg z-20 max-h-60 overflow-auto">
             <ul className="divide-y divide-gray-200">
-              {/* Qui andrebbero dinamicamente i risultati OCR */}
-              <li className="px-4 py-3 hover:bg-gray-100 cursor-pointer">Scontrino 1 - 12/05/2025</li>
-              <li className="px-4 py-3 hover:bg-gray-100 cursor-pointer">Scontrino 2 - 10/05/2025</li>
-              <li className="px-4 py-3 hover:bg-gray-100 cursor-pointer">Scontrino 3 - 05/05/2025</li>
+              {/* TODO: sostituire con dati reali */}
+              <li className="px-4 py-3 hover:bg-gray-100 cursor-pointer transition">
+                Scontrino 1 - 12/05/2025
+              </li>
+              <li className="px-4 py-3 hover:bg-gray-100 cursor-pointer transition">
+                Scontrino 2 - 10/05/2025
+              </li>
+              <li className="px-4 py-3 hover:bg-gray-100 cursor-pointer transition">
+                Scontrino 3 - 05/05/2025
+              </li>
             </ul>
           </div>
         )}
