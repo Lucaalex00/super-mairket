@@ -14,6 +14,7 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 import productRoutes from "./routes/productRoutes.js"; // Gestisce le rotte per i prodotti
 import ocrRoutes from "./routes/ocrRoutes.js"; // Gestisce le rotte per l'OCR
 import authRoutes from "./routes/authRoutes.js"; // Gestisce le rotte per l'autenticazione
+import checkProductRoutes from "./routes/checkProductRoutes.js"; // Gestisce le rotte per l'autenticazione
 
 const app = express();
 app.use(
@@ -34,14 +35,17 @@ mongoose
   .then(() => console.log("Connesso a MongoDB"))
   .catch((err) => console.error("Errore nella connessione a MongoDB:", err));
 
+// Impostiamo le rotte
+app.use("/api/ocr", ocrRoutes); // Gestione dell'OCR
+app.use("/api/products", productRoutes); // Gestione dei prodotti
+app.use("/api/auth", authRoutes); // Gestione dell'autenticazione
+app.use("/api/check-products", checkProductRoutes); // Controllo prodotti in DATABASE
+
+// Controlliamo le rotte
 app.use((req, res, next) => {
   console.log("🔍 Route non intercettata:", req.method, req.originalUrl);
   next();
 });
-// Impostiamo le rotte
-app.use("/api/products", productRoutes); // Gestione dei prodotti
-app.use("/api/ocr", ocrRoutes); // Gestione dell'OCR
-app.use("/api/auth", authRoutes); // Gestione dell'autenticazione
 
 // Avvia il server
 const port = process.env.PORT || 3000;

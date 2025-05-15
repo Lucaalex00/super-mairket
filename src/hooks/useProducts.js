@@ -10,7 +10,7 @@ export default function useProducts() {
     const fetchProducts = async () => {
       try {
         const { data } = await axios.get("/api/products");
-        console.log("✅ Risposta ricevuta:", status, data);
+        console.log("✅ Risposta ricevuta:", data);
         setProducts(data);
       } catch (err) {
         console.error("❌ Errore Axios:", err.message);
@@ -26,5 +26,6 @@ export default function useProducts() {
     fetchProducts();
   }, []);
 
-  return { products, loading, error };
+  // 👉 AGGIUNGI setProducts qui sotto
+  return { products, setProducts, loading, error };
 }
