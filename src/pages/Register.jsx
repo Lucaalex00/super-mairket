@@ -1,9 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 
 const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(""); 
+  const navigate = useNavigate();
+  
 
   const handleRegister = async (e) => {
   e.preventDefault();
@@ -28,6 +32,7 @@ const Register = () => {
     }
 
     console.log("Registrazione avvenuta:", data);
+    navigate('/login');
     localStorage.setItem("token", data.token);
   } catch (err) {
     setError(err.message);

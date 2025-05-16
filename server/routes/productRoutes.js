@@ -1,5 +1,5 @@
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js"; // Importa il middleware di protezione
+import protect from "../middleware/authMiddleware.js"; // Importa il middleware di protezione
 import { getProducts, addProduct } from "../controllers/productController.js"; // I tuoi controller
 
 const router = express.Router();

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ProductCardComponent from "./ProductCardComponent";
+import ImageModalComponent from "./ImageModalComponent";
 
 export default function ScannerComponent() {
   const videoRef = useRef(null);
@@ -199,9 +200,8 @@ export default function ScannerComponent() {
           htmlFor="upload"
           className={`px-6 py-3 cursor-pointer rounded-full font-semibold transition-transform transform ${
             usingCamera
-               ? "bg-gray-300 text-gray-700 hover:bg-gray-400"
-            : "bg-indigo-600 text-white shadow-lg hover:scale-105 active:scale-95"
-              
+              ? "bg-gray-300 text-gray-700 hover:bg-gray-400"
+              : "bg-indigo-600 text-white shadow-lg hover:scale-105 active:scale-95"
           }`}
         >
           Carica Immagine
@@ -299,31 +299,8 @@ export default function ScannerComponent() {
 
       <canvas ref={canvasRef} style={{ display: "none" }} />
 
-      {/* Modale immagine fullscreen */}
-      {modalOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
-          onClick={() => setModalOpen(false)}
-        >
-          <div
-            className="relative max-w-full max-h-full p-4"
-            onClick={(e) => e.stopPropagation()} // previene chiusura cliccando sull'immagine
-          >
-            <button
-              onClick={() => setModalOpen(false)}
-              className="absolute top-2 right-2 text-white text-3xl font-bold bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-75 transition cursor-pointer"
-              aria-label="Chiudi immagine"
-            >
-              &times;
-            </button>
-            <img
-              src={`data:image/jpeg;base64,${imageSource}`}
-              alt="Immagine ingrandita"
-              className="max-w-screen max-h-screen object-contain rounded-lg shadow-lg"
-            />
-          </div>
-        </div>
-      )}
+      {/* Modal immagine fullscreen separato */}
+      {modalOpen && <ImageModalComponent base64={imageSource} onClose={() => setModalOpen(false)} />}
 
       <style jsx global>{`
         @keyframes fadeIn {
