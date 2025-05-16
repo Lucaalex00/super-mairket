@@ -16,10 +16,10 @@ const receiptSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    date: { type: Date, required: true, default: Date.now },
-    imageBase64: { type: String },
+    rawText: String,
     products: [productSchema],
-    total: { type: Number, required: false },
+    imageBase64: String,
+    date: Date,
   },
   {
     timestamps: true,

@@ -15,6 +15,7 @@ import productRoutes from "./routes/productRoutes.js"; // Gestisce le rotte per 
 import ocrRoutes from "./routes/ocrRoutes.js"; // Gestisce le rotte per l'OCR
 import authRoutes from "./routes/authRoutes.js"; // Gestisce le rotte per l'autenticazione
 import checkProductRoutes from "./routes/checkProductRoutes.js"; // Gestisce le rotte per l'autenticazione
+import receiptRoutes from "./routes/receiptRoutes.js"; //Gestisce le rotte delle ricevute
 
 const app = express();
 app.use(
@@ -40,6 +41,7 @@ app.use("/api/ocr", ocrRoutes); // Gestione dell'OCR
 app.use("/api/products", productRoutes); // Gestione dei prodotti
 app.use("/api/auth", authRoutes); // Gestione dell'autenticazione
 app.use("/api/check-products", checkProductRoutes); // Controllo prodotti in DATABASE
+app.use("/api/receipts", receiptRoutes); // Gestione salvataggio ricevute
 
 // Controlliamo le rotte
 app.use((req, res, next) => {

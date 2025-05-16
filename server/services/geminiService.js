@@ -10,19 +10,21 @@ export const parseReceiptText = async (ocrText) => {
 
   // Miglioriamo il prompt con una descrizione chiara
   const prompt = `
-Il seguente testo è il risultato OCR di uno scontrino. Estrai una lista JSON di oggetti con:
-- nome_prodotto: il nome del prodotto
-- categoria: la categoria del prodotto (es. "Latticini", "Bevande", "Snack", "Elettronica", ecc.)
-- prezzo: il prezzo numerico in euro, es. 1.49
-- Se il prodotto ha più informazioni, aggiungi tutti i dettagli necessari.
+    Il seguente testo è il risultato OCR di uno scontrino. Estrai una lista JSON di oggetti con:
+    - nome_prodotto: il nome corretto e corretto ortograficamente del prodotto, correggendo eventuali errori di battitura o OCR (es. "GNDCCHI" deve diventare "GNOCCHI").
+    - categoria: la categoria del prodotto (es. "Latticini", "Bevande", "Snack", "Elettronica", ecc.)
+    - prezzo: il prezzo numerico in euro, es. 1.49
+    - Se il prodotto ha più informazioni, aggiungi tutti i dettagli necessari.
 
-Rispondi solo con un JSON valido.
+    Attenzione: Correggi tutti gli errori di battitura tipici del riconoscimento OCR, convertendo nomi prodotti errati come "GNDCCHI" in "GNOCCHI", "LATTTE" in "LATTE", ecc., mantenendo i nomi più simili e comuni in italiano.
 
-Testo OCR:
-"""
-${ocrText}
-"""
-`;
+    Rispondi solo con un JSON valido.
+
+    Testo OCR:
+    """
+    ${ocrText}
+    """
+    `;
 
   try {
     const result = await model.generateContent(prompt);

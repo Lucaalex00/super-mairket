@@ -39,7 +39,7 @@ const Navbar = ({ location }) => {
               <Link to="/profile" className="font-semibold text-blue-600">
                 Profilo
               </Link>
-              <button onClick={handleLogout} className="text-red-500 font-semibold">
+              <button onClick={handleLogout} className="text-red-500 cursor-pointer font-semibold">
                 Logout
               </button>
             </>

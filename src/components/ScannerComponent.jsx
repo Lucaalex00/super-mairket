@@ -12,6 +12,13 @@ export default function ScannerComponent() {
   const [imageSource, setImageSource] = useState(null);
   const [usingCamera, setUsingCamera] = useState(true);
 
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Stato per la modale immagine fullscreen
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // Avvia webcam se scelto
   useEffect(() => {
     if (usingCamera) {
       const getCameraStream = async () => {
@@ -35,6 +42,7 @@ export default function ScannerComponent() {
     }
   }, [usingCamera]);
 
+  // Analizza immagine (da webcam o caricata)
   const analyzeImage = async () => {
     setLoading(true);
     setError("");
@@ -61,6 +69,7 @@ export default function ScannerComponent() {
         base64Image = imageSource;
       }
 
+      // Chiamata OCR
       const ocrResponse = await fetch("/api/ocr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -72,7 +81,8 @@ export default function ScannerComponent() {
       const ocrResult = await ocrResponse.json();
       setRawText(ocrResult.rawText);
 
-      const checkResponse = await fetch("http://localhost:3000/api/check-products", {
+      // Controllo prodotti
+      const checkResponse = await fetch("/api/check-products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prodotti: ocrResult.structuredItems || [] }),
@@ -81,12 +91,77 @@ export default function ScannerComponent() {
       if (!checkResponse.ok) throw new Error("Errore controllo prodotti");
 
       const checkedItems = await checkResponse.json();
+      console.log("Checked Items:", checkedItems);
       setStructuredItems(checkedItems);
     } catch (err) {
       console.error(err);
       setError("Errore nell'elaborazione o nel controllo prodotti");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Salva lo scontrino con token autorizzazione
+  const saveReceipt = async () => {
+    if (!structuredItems.length || !rawText || !imageSource) {
+      setError("Dati mancanti per il salvataggio.");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    setSaveSuccess(false);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Token non trovato, effettua il login.");
+      }
+
+      // Filtro prodotti validi
+      const validProducts = structuredItems
+        .filter((p) => p.nome_prodotto && typeof p.prezzo === "number")
+        .map((p) => ({
+          name: p.nome_prodotto,
+          category: p.categoria || "",
+          quantity: p.quantita || 1,
+          price: p.prezzo,
+        }));
+
+      if (validProducts.length === 0) {
+        setError("Nessun prodotto valido da salvare.");
+        setSaving(false);
+        return;
+      }
+
+      // Invio validProducts al backend
+      const response = await fetch("/api/receipts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          rawText,
+          products: validProducts,
+          imageBase64: imageSource,
+          date: new Date().toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Non autorizzato, effettua il login.");
+        }
+        throw new Error("Errore nel salvataggio");
+      }
+
+      setSaveSuccess(true);
+    } catch (err) {
+      console.error("Errore durante il salvataggio:", err);
+      setError(err.message || "Errore durante il salvataggio dello scontrino");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -111,7 +186,7 @@ export default function ScannerComponent() {
             setStructuredItems([]);
             setError("");
           }}
-          className={`px-6 py-3 rounded-full font-semibold transition-transform transform ${
+          className={`px-6 py-3 cursor-pointer rounded-full font-semibold transition-transform transform ${
             usingCamera
               ? "bg-indigo-600 text-white shadow-lg hover:scale-105 active:scale-95"
               : "bg-gray-300 text-gray-700 hover:bg-gray-400"
@@ -122,7 +197,12 @@ export default function ScannerComponent() {
         </button>
         <label
           htmlFor="upload"
-          className="cursor-pointer px-6 py-3 rounded-full font-semibold transition-transform transform bg-gray-300 text-gray-700 hover:bg-gray-400 shadow-md active:scale-95"
+          className={`px-6 py-3 cursor-pointer rounded-full font-semibold transition-transform transform ${
+            usingCamera
+               ? "bg-gray-300 text-gray-700 hover:bg-gray-400"
+            : "bg-indigo-600 text-white shadow-lg hover:scale-105 active:scale-95"
+              
+          }`}
         >
           Carica Immagine
           <input
@@ -162,7 +242,8 @@ export default function ScannerComponent() {
           <img
             src={`data:image/jpeg;base64,${imageSource}`}
             alt="Immagine caricata"
-            className="w-full h-full object-contain rounded-xl"
+            className="w-full h-full object-contain rounded-xl cursor-pointer"
+            onClick={() => setModalOpen(true)}
           />
         ) : (
           <div className="flex items-center justify-center w-full h-full bg-gray-100 text-gray-400 font-medium rounded-xl">
@@ -174,7 +255,7 @@ export default function ScannerComponent() {
       <button
         onClick={analyzeImage}
         disabled={loading}
-        className="mt-6 mx-auto block bg-indigo-600 text-white px-10 py-3 rounded-full font-bold shadow-lg hover:bg-indigo-700 transition-transform active:scale-95 disabled:opacity-50"
+        className="mt-6 mx-auto block bg-indigo-600 text-white px-10 py-3 rounded-full font-bold shadow-lg cursor-pointer hover:bg-indigo-700 transition-transform active:scale-95 disabled:opacity-50"
       >
         {loading ? <span className="animate-pulse">Analisi in corso...</span> : "Scatta / Analizza"}
       </button>
@@ -199,10 +280,50 @@ export default function ScannerComponent() {
               <ProductCardComponent item={item} />
             </div>
           ))}
+          <div className="col-span-full text-center mt-4">
+            <button
+              onClick={saveReceipt}
+              disabled={saving}
+              className="bg-green-600 text-white px-6 py-3 rounded-full font-bold shadow-lg cursor-pointer hover:bg-green-700 transition-transform active:scale-95 disabled:opacity-50"
+            >
+              {saving ? "Salvataggio in corso..." : "Salva Scontrino"}
+            </button>
+            {saveSuccess && (
+              <p className="mt-2 text-green-600 font-semibold animate-fadeIn">
+                ✅ Scontrino salvato con successo!
+              </p>
+            )}
+          </div>
         </section>
       )}
 
       <canvas ref={canvasRef} style={{ display: "none" }} />
+
+      {/* Modale immagine fullscreen */}
+      {modalOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
+          onClick={() => setModalOpen(false)}
+        >
+          <div
+            className="relative max-w-full max-h-full p-4"
+            onClick={(e) => e.stopPropagation()} // previene chiusura cliccando sull'immagine
+          >
+            <button
+              onClick={() => setModalOpen(false)}
+              className="absolute top-2 right-2 text-white text-3xl font-bold bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-75 transition cursor-pointer"
+              aria-label="Chiudi immagine"
+            >
+              &times;
+            </button>
+            <img
+              src={`data:image/jpeg;base64,${imageSource}`}
+              alt="Immagine ingrandita"
+              className="max-w-screen max-h-screen object-contain rounded-lg shadow-lg"
+            />
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         @keyframes fadeIn {
