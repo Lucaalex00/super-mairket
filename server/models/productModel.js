@@ -1,12 +1,14 @@
 import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema({
-  nome_prodotto: String,
-  descrizione: String,
-  prezzo: Number,
-  categoria: String,
-  immagine: String,
-  corsia: String,
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  id: String,
+  name: String,
+  description: String,
+  price: Number,
+  category: String,
+  image: String,
+  aisle: String, // opzionale
 });
 
 export default mongoose.model("Product", productSchema);

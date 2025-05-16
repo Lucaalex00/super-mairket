@@ -1,5 +1,4 @@
-// models/receiptModel.js
-
+/* models/receiptModel.js */
 import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema({
@@ -20,12 +19,10 @@ const receiptSchema = new mongoose.Schema(
     products: [productSchema],
     imageBase64: String,
     date: Date,
+    supermarket_name: { type: String },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 const Receipt = mongoose.model("Receipt", receiptSchema);
-
 export default Receipt;

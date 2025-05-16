@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import ImageModalComponent from "./ImageModalComponent"; // importa il nuovo componente
+import ImageModalComponent from "./ImageModalComponent";
 
 export default function ReceiptsListComponent({ receipts, token, setReceipts }) {
-  const [confirmId, setConfirmId] = useState(null); // id della ricevuta da confermare eliminazione
-  const [toast, setToast] = useState(null); // messaggio di toast { type, message }
-  const [modalImage, setModalImage] = useState(null); // base64 immagine per modale
+  const [confirmId, setConfirmId] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [modalImage, setModalImage] = useState(null);
+  const [selectedSupermarket, setSelectedSupermarket] = useState("");
 
-  // Toast auto-dismiss dopo 3 secondi
+  // Ricava nomi unici dei supermercati per il filtro
+  const supermarketNames = [...new Set(receipts.map((r) => r.supermarket_name))];
+
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => setToast(null), 3000);
@@ -30,12 +33,37 @@ export default function ReceiptsListComponent({ receipts, token, setReceipts }) 
     }
   };
 
-  if (receipts.length === 0)
-    return <p className="italic text-gray-500">Nessuna ricevuta trovata.</p>;
+  const filteredReceipts = selectedSupermarket
+    ? receipts.filter((r) => r.supermarket_name === selectedSupermarket)
+    : receipts;
+
+  if (filteredReceipts.length === 0)
+    return (
+      <>
+        <div className="mb-4">
+          <label htmlFor="supermarket-filter" className="block font-semibold mb-1">
+            Filtra per supermercato:
+          </label>
+          <select
+            id="supermarket-filter"
+            value={selectedSupermarket}
+            onChange={(e) => setSelectedSupermarket(e.target.value)}
+            className="p-2 border rounded"
+          >
+            <option value="">Tutti</option>
+            {supermarketNames.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <p className="italic text-gray-500">Nessuna ricevuta trovata.</p>
+      </>
+    );
 
   return (
     <>
-      {/* TOAST */}
       {toast && (
         <div
           className={`fixed top-5 right-5 px-4 py-2 rounded shadow text-white font-semibold z-50
@@ -47,21 +75,44 @@ export default function ReceiptsListComponent({ receipts, token, setReceipts }) 
         </div>
       )}
 
-      {/* MODALE IMMAGINE USANDO PORTAL */}
       <ImageModalComponent base64={modalImage} onClose={() => setModalImage(null)} />
 
+      {/* FILTRO */}
+      <div className="mb-6">
+        <label htmlFor="supermarket-filter" className="block font-semibold mb-1">
+          Filtra per supermercato:
+        </label>
+        <select
+          id="supermarket-filter"
+          value={selectedSupermarket}
+          onChange={(e) => setSelectedSupermarket(e.target.value)}
+          className="p-2 border rounded"
+        >
+          <option value="">Tutti</option>
+          {supermarketNames.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="space-y-6">
-        {receipts.map((receipt) => (
+        {filteredReceipts.map((receipt) => (
           <div
             key={receipt._id}
             className="border p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 bg-gray-50"
           >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-lg text-gray-700">
-                Data: {new Date(receipt.date).toLocaleDateString()}
-              </h3>
+              <div className="flex flex-col">
+                <h3 className="text-2xl text-black text-shadow-md ">
+                  {receipt.supermarket_name}
+                </h3>
+                <h3 className="font-semibold text-md text-shadow-sm text-gray-700">
+                  Data: {new Date(receipt.date).toLocaleDateString()}
+                </h3>
+              </div>
 
-              {/* Bottone elimina o conferma */}
               {confirmId === receipt._id ? (
                 <div className="flex gap-2">
                   <button
@@ -81,9 +132,7 @@ export default function ReceiptsListComponent({ receipts, token, setReceipts }) 
                 <button
                   onClick={() => setConfirmId(receipt._id)}
                   className="cursor-pointer bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition duration-300"
-                  aria-label={`Elimina ricevuta del ${new Date(
-                    receipt.date
-                  ).toLocaleDateString()}`}
+                  aria-label={`Elimina ricevuta del ${new Date(receipt.date).toLocaleDateString()}`}
                 >
                   Elimina
                 </button>
@@ -101,10 +150,10 @@ export default function ReceiptsListComponent({ receipts, token, setReceipts }) 
               />
             )}
 
-            <div>
+            <div className="px-1">
               <h4 className="font-semibold mb-2 text-gray-800">Prodotti:</h4>
               {receipt.products && receipt.products.length > 0 ? (
-                <ul className="list-disc list-inside mb-3 max-h-48 overflow-auto space-y-1 text-gray-700">
+                <ul className="list-disc px-3 pb-3 list-inside mb-3 max-h-48 overflow-auto space-y-1 text-gray-700">
                   {receipt.products.map((p, idx) => (
                     <li key={idx} className="flex justify-between">
                       <span>{p.name}</span>

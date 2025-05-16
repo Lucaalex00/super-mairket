@@ -46,13 +46,21 @@ const Profile = () => {
     if (token) fetchReceipts();
   }, [token]);
 
+  // Lista unica dei nomi supermercati, da passare al filtro
+  const supermarkets = [...new Set(receipts.map((r) => r.supermarket_name).filter(Boolean))];
+
   const handleLogout = () => {
     dispatch(logout());
     navigate("/login");
   };
 
   // Raccogli tutti i prodotti di tutte le ricevute per i totali
-  const allProducts = receipts.flatMap((receipt) => receipt.products || []);
+  const allProducts = receipts.flatMap(receipt =>
+  (receipt.products || []).map(prod => ({
+    ...prod,
+    supermarket_name: receipt.supermarket_name,
+  }))
+);
 
   return (
     <div className="max-w-4xl mx-auto mt-10 p-8 bg-white rounded-xl shadow-lg">
@@ -91,7 +99,14 @@ const Profile = () => {
           aria-expanded={viewMode === "list"}
           aria-controls="receipts-dropdown"
         >
-          I miei acquisti OCR <span className="text-xl">▼</span>
+          I miei acquisti OCR
+          <span id="1"
+            className={`text-xl inline-block transform transition-transform duration-300 ${
+              viewMode === "list" ? "rotate-180" : ""
+            }`}
+          >
+            ▼
+          </span>
         </button>
 
         <button
@@ -104,7 +119,14 @@ const Profile = () => {
           aria-expanded={viewMode === "totals"}
           aria-controls="totals-dropdown"
         >
-          Totali per Categoria <span className="text-xl">▼</span>
+          Totali
+          <span
+            className={`text-xl inline-block transform transition-transform duration-300 ${
+              viewMode === "totals" ? "rotate-180" : ""
+            }`}
+          >
+            ▼
+          </span>
         </button>
       </div>
 
@@ -130,7 +152,7 @@ const Profile = () => {
           className="mt-4 w-full bg-white border rounded-lg shadow-lg z-20 max-h-96 overflow-auto p-6 animate-fadeIn"
           style={{ scrollbarWidth: "thin", scrollbarColor: "#a0aec0 #edf2f7" }}
         >
-          <CategoryTotalsComponent products={allProducts} />
+          <CategoryTotalsComponent products={allProducts} supermarkets={supermarkets} />
         </div>
       )}
 

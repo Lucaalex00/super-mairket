@@ -12,6 +12,7 @@ export default function ScannerComponent() {
   const [error, setError] = useState("");
   const [imageSource, setImageSource] = useState(null);
   const [usingCamera, setUsingCamera] = useState(true);
+  const [supermarketName, setSupermarketName] = useState(""); // <-- nuovo stato
 
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -147,6 +148,7 @@ export default function ScannerComponent() {
           products: validProducts,
           imageBase64: imageSource,
           date: new Date().toISOString(),
+          supermarket_name: supermarketName,
         }),
       });
 
@@ -281,6 +283,18 @@ export default function ScannerComponent() {
             </div>
           ))}
           <div className="col-span-full text-center mt-4">
+            <div className="my-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nome Supermercato
+              </label>
+              <input
+                type="text"
+                value={supermarketName}
+                onChange={(e) => setSupermarketName(e.target.value)}
+                placeholder="Es. Esselunga, Conad, Coop..."
+                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
             <button
               onClick={saveReceipt}
               disabled={saving}
