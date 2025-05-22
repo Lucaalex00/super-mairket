@@ -7,8 +7,8 @@ import OfferProducts from "../components/OfferProductsComponent";
 import SpinnerComponent from "../components/SpinnerComponent";
 
 export default function Home() {
-  const { products, loading, error } = useProducts();
-
+  const { products = [], loading, error } = useProducts();  // Aggiungi un valore di default (array vuoto)
+  
   const [categories, setCategories] = useState([]);
   const { categoryColors } = useCategoryColors(categories);
 
@@ -25,19 +25,21 @@ export default function Home() {
   }
 
   if (error) {
-    return <p className="text-center text-red-500 text-lg">{error}</p>;
+    return <p className="text-center text-red-500 text-lg">Fai il login per vedere i prodotti</p>;
   }
 
   // Funzione per selezionare prodotti casuali
   const getRandomProducts = (count) => [...products].sort(() => 0.5 - Math.random()).slice(0, count);
-  const randomProducts = getRandomProducts(8);
-  const offers = products.filter(p => p.price < 2).slice(0, 4);
+
+  // Verifica se 'products' è effettivamente un array prima di chiamare filter
+  const randomProducts = Array.isArray(products) ? getRandomProducts(8) : [];
+  const offers = Array.isArray(products) ? products.filter(p => p.price < 2).slice(0, 4) : [];
 
   return (
     <div className="max-w-7xl mx-auto p-4">
       {/* Hero */}
       <div className="text-center py-10">
-        <h1 className="text-5xl font-bold text-gray-800 mb-4">Benvenuto su Super-Mairket</h1>
+        <h1 className="text-5xl font-extrabold text-gray-800 mb-4">Benvenuto su Super-Mairket</h1>
         <p className="text-gray-600 mb-6">Scopri offerte, prodotti e trova tutto ciò che ti serve!</p>
         <Link
           to="/catalog"

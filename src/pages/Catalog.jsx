@@ -1,3 +1,4 @@
+// Catalog.js
 import React, { useMemo, useState } from 'react';
 import useProducts from '../hooks/useProducts';
 import useCategoryColors from '../hooks/useCategoryColors';
@@ -33,7 +34,7 @@ export default function Catalog() {
   }
 
   if (error) {
-    return <p className="text-center text-red-500">{error}</p>;
+    return <p className="text-center text-red-500">Fai il login per vedere i prodotti</p>;
   }
 
   return (

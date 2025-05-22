@@ -34,7 +34,7 @@ export default function CarouselComponent({ products, categoryColors }) {
               <img src={product.image} alt={product.name} className="w-full h-40 object-cover" />
               <div className="p-3">
                 <h3 className="text-lg font-semibold">{product.name}</h3>
-                <p className="text-sm">€{product.price.toFixed(2)}</p>
+                <p className="text-sm">€{typeof product.price === 'number' ? product.price.toFixed(2) : "N/A"}</p>
               </div>
             </div>
           </SwiperSlide>
